@@ -1,0 +1,91 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider     = "mongodb"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"  // Optional, defaults to 'foreignKeys' for MongoDB.
+}
+
+model Account {
+  id                String  @id @default(auto()) @map("_id") @db.ObjectId
+  userId            String  @db.ObjectId
+  type              String
+  provider          String
+  providerAccountId String
+  refreshToken      String?
+  accessToken       String?
+  expiresAt         Int?
+  tokenType         String?
+  scope             String?
+  idToken           String?
+  sessionState      String?
+  user              User    @relation(fields: [userId], references: [id])
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  sessionToken String   @unique
+  userId       String   @db.ObjectId
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id])
+}
+
+model User {
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  credits       Int       @default(10)
+
+  accounts      Account[]
+  sessions      Session[]
+}
+
+model Course {
+  id    String @id @default(auto()) @map("_id") @db.ObjectId
+  name  String
+  image String
+  units Unit[]
+}
+
+model Unit {
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  courseId String @db.ObjectId
+  name     String
+  course   Course  @relation(fields: [courseId], references: [id])
+  chapters Chapter[]
+}
+
+model Chapter {
+  id                 String @id @default(auto()) @map("_id") @db.ObjectId
+  unitId             String @db.ObjectId
+  name               String
+  youtubeSearchQuery String
+  videoId            String?
+  summary            String?
+  unit               Unit     @relation(fields: [unitId], references: [id])
+  questions          Question[]
+}
+
+model Question {
+  id        String @id @default(auto()) @map("_id") @db.ObjectId
+  chapterId String @db.ObjectId
+  question  String
+  answer    String
+  options   String
+  chapter   Chapter @relation(fields: [chapterId], references: [id])
+}
+
+model UserSubscription {
+  id                     String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId                 String    @unique
+  stripeCustomerId       String    @unique
+  stripeSubscriptionId   String?   @unique
+  stripePriceId          String?
+  stripeCurrentPeriodEnd DateTime?
+}
